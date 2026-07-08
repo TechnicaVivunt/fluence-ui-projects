@@ -33,8 +33,8 @@ $xaml = @"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:ui="clr-namespace:Fluence.Wpf.Controls;assembly=Fluence.Wpf"
     Title="PSADT Remote Deployment"
-    Width="750"
-    Height="600"
+    Width="800"
+    Height="650"
     WindowStartupLocation="CenterScreen"
     SystemBackdropType="Mica"
     ExtendsContentIntoTitleBar="True"
@@ -61,8 +61,8 @@ $xaml = @"
         <Style x:Key="SectionCard" TargetType="Border">
             <Setter Property="Background" Value="{DynamicResource LayerFillColorDefaultBrush}"/>
             <Setter Property="CornerRadius" Value="8"/>
-            <Setter Property="Padding" Value="14"/>
-            <Setter Property="Margin" Value="0,0,0,14"/>
+            <Setter Property="Padding" Value="16"/>
+            <Setter Property="Margin" Value="0,0,0,16"/>
         </Style>
     </ui:FluenceWindow.Resources>
 
@@ -71,178 +71,183 @@ $xaml = @"
         <StackPanel DockPanel.Dock="Bottom"
                     Orientation="Horizontal"
                     HorizontalAlignment="Center"
-                    Margin="0,12,0,12"
+                    Margin="0,14,0,14"
                     Height="44">
             <ui:Button x:Name="BtnDeployment"
                        Style="{StaticResource UnifiedButton}"
                        Content="Deployment"
                        Margin="4,0"
-                       Width="130"/>
+                       Width="140"/>
             <ui:Button x:Name="BtnLogs"
                        Style="{StaticResource UnifiedButton}"
                        Content="Logs"
                        Margin="4,0"
-                       Width="130"/>
+                       Width="140"/>
             <ui:Button x:Name="BtnClose"
                        Style="{StaticResource UnifiedButton}"
                        Content="Close"
                        Margin="4,0"
-                       Width="130"/>
+                       Width="140"/>
         </StackPanel>
 
         <!-- MAIN CONTENT -->
-        <StackPanel Margin="24,20,24,14"
-                    DockPanel.Dock="Top">
+        <ScrollViewer VerticalScrollBarVisibility="Auto" DockPanel.Dock="Top">
+            <StackPanel Margin="28,24,28,16">
 
-            <!-- PAGE HEADER -->
-            <StackPanel Margin="0,0,0,18">
-                <TextBlock Text="PSADT Remote Deployment"
-                           FontSize="26"
-                           FontWeight="Bold"
-                           Foreground="{DynamicResource TextFillColorPrimaryBrush}"/>
-                <TextBlock x:Name="Subtitle"
-                           Text="Ready"
-                           FontSize="13"
-                           Margin="0,6,0,0"
-                           Foreground="{DynamicResource TextFillColorSecondaryBrush}"/>
-            </StackPanel>
+                <!-- PAGE HEADER -->
+                <StackPanel Margin="0,0,0,20">
+                    <TextBlock Text="PSADT Remote Deployment"
+                               FontSize="28"
+                               FontWeight="Bold"
+                               Foreground="{DynamicResource TextFillColorPrimaryBrush}"/>
+                    <TextBlock x:Name="Subtitle"
+                               Text="Ready"
+                               FontSize="14"
+                               Margin="0,8,0,0"
+                               Foreground="{DynamicResource TextFillColorSecondaryBrush}"/>
+                </StackPanel>
 
-            <!-- DEPLOYMENT PANEL -->
-            <Border Style="{StaticResource SectionCard}"
-                    x:Name="DeploymentPanel">
-                <StackPanel>
-                    <TextBlock Text="Deployment"
-                               FontSize="15"
-                               FontWeight="SemiBold"
-                               Margin="0,0,0,12"/>
+                <!-- DEPLOYMENT PANEL -->
+                <Border Style="{StaticResource SectionCard}"
+                        x:Name="DeploymentPanel">
+                    <StackPanel>
+                        <TextBlock Text="Deployment Configuration"
+                                   FontSize="16"
+                                   FontWeight="SemiBold"
+                                   Margin="0,0,0,14"/>
 
-                    <TextBlock Text="Computer:"
-                               FontSize="12"
-                               Margin="0,0,0,4"/>
-                    <TextBox x:Name="ComputerInput"
-                             Height="32"
-                             Margin="0,0,0,10"
-                             Padding="8,6"/>
+                        <TextBlock Text="Computer:"
+                                   FontSize="12"
+                                   Margin="0,0,0,4"
+                                   Foreground="{DynamicResource TextFillColorPrimaryBrush}"/>
+                        <TextBox x:Name="ComputerInput"
+                                 Height="36"
+                                 Margin="0,0,0,12"
+                                 Padding="10,8"
+                                 FontSize="12"/>
 
-                    <TextBlock Text="Source Path:"
-                               FontSize="12"
-                               Margin="0,0,0,4"/>
-                    <Grid Margin="0,0,0,12">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="*"/>
-                            <ColumnDefinition Width="80"/>
-                        </Grid.ColumnDefinitions>
+                        <TextBlock Text="Source Path:"
+                                   FontSize="12"
+                                   Margin="0,0,0,4"
+                                   Foreground="{DynamicResource TextFillColorPrimaryBrush}"/>
                         <TextBox x:Name="SourcePathInput"
-                                 Height="32"
-                                 Grid.Column="0"
-                                 Margin="0,0,6,0"
-                                 Padding="8,6"/>
-                        <ui:Button x:Name="BtnBrowse"
-                                   Grid.Column="1"
-                                   Content="Browse"
-                                   Height="32"
-                                   Style="{StaticResource UnifiedButton}"/>
-                    </Grid>
+                                 Height="36"
+                                 Margin="0,0,0,14"
+                                 Padding="10,8"
+                                 FontSize="12"
+                                 IsReadOnly="True"/>
 
-                    <ui:Button x:Name="BtnDeploy"
-                               Style="{StaticResource UnifiedButton}"
-                               Content="Start Deployment"
-                               Margin="0,0,0,8"/>
-                    <ui:Button x:Name="BtnReRun"
-                               Style="{StaticResource UnifiedButton}"
-                               Content="Re-run Deployment"
-                               Margin="0,0,0,8"
-                               IsEnabled="False"/>
-
-                    <Grid>
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="*"/>
-                            <ColumnDefinition Width="*"/>
-                        </Grid.ColumnDefinitions>
-                        <ui:Button x:Name="BtnOpenFolder"
-                                   Grid.Column="0"
+                        <ui:Button x:Name="BtnDeploy"
                                    Style="{StaticResource UnifiedButton}"
-                                   Content="Open Folder"
-                                   IsEnabled="False"
-                                   Margin="0,0,4,0"/>
-                        <ui:Button x:Name="BtnDeleteFolder"
-                                   Grid.Column="1"
+                                   Content="Start Deployment"
+                                   Margin="0,0,0,8"/>
+                        <ui:Button x:Name="BtnReRun"
                                    Style="{StaticResource UnifiedButton}"
-                                   Content="Delete"
-                                   IsEnabled="False"
-                                   Margin="4,0,0,0"/>
-                    </Grid>
-                </StackPanel>
-            </Border>
+                                   Content="Re-run Deployment"
+                                   Margin="0,0,0,10"
+                                   IsEnabled="False"/>
 
-            <!-- OUTPUT PANEL -->
-            <Border Style="{StaticResource SectionCard}"
-                    x:Name="OutputPanel">
-                <StackPanel>
-                    <TextBlock Text="Output"
-                               FontSize="15"
-                               FontWeight="SemiBold"
-                               Margin="0,0,0,10"/>
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <ui:Button x:Name="BtnOpenFolder"
+                                       Grid.Column="0"
+                                       Style="{StaticResource UnifiedButton}"
+                                       Content="Open Folder"
+                                       IsEnabled="False"
+                                       Margin="0,0,4,0"/>
+                            <ui:Button x:Name="BtnDeleteFolder"
+                                       Grid.Column="1"
+                                       Style="{StaticResource UnifiedButton}"
+                                       Content="Delete"
+                                       IsEnabled="False"
+                                       Margin="4,0,0,0"/>
+                        </Grid>
+                    </StackPanel>
+                </Border>
 
-                    <TextBox x:Name="OutputBox"
-                             AcceptsReturn="True"
-                             VerticalScrollBarVisibility="Auto"
-                             BorderThickness="0"
-                             Background="{DynamicResource LayerFillColorDefaultBrush}"
-                             Foreground="{DynamicResource TextFillColorPrimaryBrush}"
-                             IsReadOnly="True"
-                             TextWrapping="Wrap"
-                             FontFamily="Consolas"
-                             FontSize="10"
-                             Height="140"
-                             Padding="8"/>
-                </StackPanel>
-            </Border>
+                <!-- OUTPUT PANEL -->
+                <Border Style="{StaticResource SectionCard}"
+                        x:Name="OutputPanel">
+                    <StackPanel>
+                        <TextBlock Text="Deployment Progress"
+                                   FontSize="16"
+                                   FontWeight="SemiBold"
+                                   Margin="0,0,0,12"/>
 
-            <!-- LOGS PANEL -->
-            <Border Style="{StaticResource SectionCard}"
-                    x:Name="LogsPanel"
-                    Visibility="Collapsed">
-                <StackPanel>
-                    <TextBlock Text="Deployment Logs"
-                               FontSize="15"
-                               FontWeight="SemiBold"
-                               Margin="0,0,0,10"/>
+                        <TextBlock x:Name="StatusText"
+                                   Text="Ready"
+                                   FontSize="12"
+                                   Margin="0,0,0,8"
+                                   Foreground="{DynamicResource TextFillColorSecondaryBrush}"/>
 
-                    <Grid Margin="0,0,0,10">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="*"/>
-                            <ColumnDefinition Width="*"/>
-                        </Grid.ColumnDefinitions>
-                        <ui:Button x:Name="BtnRefreshLogs"
-                                   Grid.Column="0"
-                                   Style="{StaticResource UnifiedButton}"
-                                   Content="Refresh"
-                                   IsEnabled="False"
-                                   Margin="0,0,4,0"/>
-                        <ui:Button x:Name="BtnOpenLogFile"
-                                   Grid.Column="1"
-                                   Style="{StaticResource UnifiedButton}"
-                                   Content="Open"
-                                   IsEnabled="False"
-                                   Margin="4,0,0,0"/>
-                    </Grid>
+                        <ProgressBar x:Name="ProgressBar"
+                                     Height="6"
+                                     Margin="0,0,0,12"
+                                     Foreground="#023c74"/>
 
-                    <TextBox x:Name="LogViewer"
-                             AcceptsReturn="True"
-                             VerticalScrollBarVisibility="Auto"
-                             BorderThickness="0"
-                             Background="{DynamicResource LayerFillColorDefaultBrush}"
-                             Foreground="{DynamicResource TextFillColorPrimaryBrush}"
-                             IsReadOnly="True"
-                             TextWrapping="Wrap"
-                             FontFamily="Consolas"
-                             FontSize="10"
-                             Height="280"
-                             Padding="8"/>
-                </StackPanel>
-            </Border>
-        </StackPanel>
+                        <TextBox x:Name="OutputBox"
+                                 AcceptsReturn="True"
+                                 VerticalScrollBarVisibility="Auto"
+                                 BorderThickness="0"
+                                 Background="{DynamicResource LayerFillColorDefaultBrush}"
+                                 Foreground="{DynamicResource TextFillColorPrimaryBrush}"
+                                 IsReadOnly="True"
+                                 TextWrapping="Wrap"
+                                 FontFamily="Consolas"
+                                 FontSize="11"
+                                 Height="160"
+                                 Padding="10"/>
+                    </StackPanel>
+                </Border>
+
+                <!-- LOGS PANEL -->
+                <Border Style="{StaticResource SectionCard}"
+                        x:Name="LogsPanel"
+                        Visibility="Collapsed">
+                    <StackPanel>
+                        <TextBlock Text="Deployment Logs"
+                                   FontSize="16"
+                                   FontWeight="SemiBold"
+                                   Margin="0,0,0,12"/>
+
+                        <Grid Margin="0,0,0,12">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <ui:Button x:Name="BtnRefreshLogs"
+                                       Grid.Column="0"
+                                       Style="{StaticResource UnifiedButton}"
+                                       Content="Refresh"
+                                       IsEnabled="False"
+                                       Margin="0,0,4,0"/>
+                            <ui:Button x:Name="BtnOpenLogFile"
+                                       Grid.Column="1"
+                                       Style="{StaticResource UnifiedButton}"
+                                       Content="Open"
+                                       IsEnabled="False"
+                                       Margin="4,0,0,0"/>
+                        </Grid>
+
+                        <TextBox x:Name="LogViewer"
+                                 AcceptsReturn="True"
+                                 VerticalScrollBarVisibility="Auto"
+                                 BorderThickness="0"
+                                 Background="{DynamicResource LayerFillColorDefaultBrush}"
+                                 Foreground="{DynamicResource TextFillColorPrimaryBrush}"
+                                 IsReadOnly="True"
+                                 TextWrapping="Wrap"
+                                 FontFamily="Consolas"
+                                 FontSize="11"
+                                 Height="300"
+                                 Padding="10"/>
+                    </StackPanel>
+                </Border>
+            </StackPanel>
+        </ScrollViewer>
     </DockPanel>
 </ui:FluenceWindow>
 
@@ -264,12 +269,13 @@ $LogsPanel = $window.FindName("LogsPanel")
 
 $ComputerInput = $window.FindName("ComputerInput")
 $SourcePathInput = $window.FindName("SourcePathInput")
-$BtnBrowse = $window.FindName("BtnBrowse")
 $BtnDeploy = $window.FindName("BtnDeploy")
 $BtnReRun = $window.FindName("BtnReRun")
 $BtnOpenFolder = $window.FindName("BtnOpenFolder")
 $BtnDeleteFolder = $window.FindName("BtnDeleteFolder")
 
+$StatusText = $window.FindName("StatusText")
+$ProgressBar = $window.FindName("ProgressBar")
 $OutputBox = $window.FindName("OutputBox")
 
 $BtnRefreshLogs = $window.FindName("BtnRefreshLogs")
@@ -299,6 +305,31 @@ $BtnClose.Add_Click({ $window.Close() })
 $script:LastDeployment = $null
 
 # ============================================================
+# Helper Functions
+# ============================================================
+
+function Add-OutputLine {
+    param([string]$Message)
+    if ($OutputBox.Text.Length -gt 50000) { 
+        $OutputBox.Text = $OutputBox.Text.Substring([Math]::Max(0, $OutputBox.Text.Length - 30000))
+    }
+    $OutputBox.Text += "$Message`n"
+    $OutputBox.ScrollToEnd()
+    $window.Dispatcher.Invoke([System.Action]{}, "Render")
+}
+
+function Set-Status {
+    param([string]$Message)
+    $StatusText.Text = $Message
+}
+
+function Set-Progress {
+    param([int]$Value)
+    $ProgressBar.Value = [Math]::Min($Value, 100)
+    $window.Dispatcher.Invoke([System.Action]{}, "Render")
+}
+
+# ============================================================
 # Main Deployment Function
 # ============================================================
 
@@ -320,18 +351,19 @@ function Invoke-PSADTDeployment {
     $RemoteExe = Join-Path $RemoteUNC "Invoke-AppDeployToolkit.exe"
     $RemoteLogDir = "\\$ComputerName\C$\Windows\Logs\Software"
 
-    Write-Output "============================================================"
-    Write-Output " PSADT Remote Deployment"
-    Write-Output "============================================================"
-    Write-Output "Computer   : $ComputerName"
-    Write-Output "Deployment : $DeploymentName"
-    Write-Output "Source     : $SourceDeploymentPath"
-    Write-Output "Destination: $RemoteDeployPath"
-    Write-Output "============================================================"
+    Add-OutputLine "============================================================"
+    Add-OutputLine " PSADT Remote Deployment"
+    Add-OutputLine "============================================================"
+    Add-OutputLine "Computer   : $ComputerName"
+    Add-OutputLine "Deployment : $DeploymentName"
+    Add-OutputLine "Source     : $SourceDeploymentPath"
+    Add-OutputLine "Destination: $RemoteDeployPath"
+    Add-OutputLine "============================================================"
 
     try {
 
-        Write-Output "Ensuring remote deployment directory exists..."
+        Set-Status "Creating remote directory..."
+        Add-OutputLine "[*] Creating remote directory..."
 
         Invoke-Command -ComputerName $ComputerName -ScriptBlock {
             param($Path)
@@ -340,11 +372,17 @@ function Invoke-PSADTDeployment {
             }
         } -ArgumentList $RemoteDeployPath
 
-        Write-Output "Copying deployment..."
+        Add-OutputLine "[OK] Directory ready"
+
+        Set-Status "Copying files..."
+        Add-OutputLine "[*] Copying deployment files..."
+        Set-Progress 0
 
         $files = Get-ChildItem -Path $SourceDeploymentPath -Recurse -File
         $totalBytes = ($files | Measure-Object Length -Sum).Sum
         $copiedBytes = 0
+        $fileCount = 0
+        $totalFiles = $files.Count
 
         foreach ($file in $files) {
             $relative = $file.FullName.Substring(
@@ -360,21 +398,31 @@ function Invoke-PSADTDeployment {
 
             Copy-Item -Path $file.FullName -Destination $dest -Force
             $copiedBytes += $file.Length
+            $fileCount++
 
             $percent = if ($totalBytes -gt 0) {
-                [math]::Round(($copiedBytes / $totalBytes) * 100, 2)
+                [math]::Round(($copiedBytes / $totalBytes) * 100, 0)
             } else { 0 }
 
-            Write-Output "  [$percent%] $relative"
+            Set-Progress $percent
+            Set-Status "Copying ($fileCount/$totalFiles files) - $percent%"
         }
 
-        Write-Output "Copy complete"
+        Add-OutputLine "[OK] Copy complete ($fileCount files)"
+        Set-Progress 25
+
+        Set-Status "Validating toolkit..."
+        Add-OutputLine "[*] Validating toolkit..."
 
         if (-not (Test-Path $RemoteExe)) {
             throw "Invoke-AppDeployToolkit.exe not found at $RemoteExe"
         }
 
-        Write-Output "Starting remote deployment session..."
+        Add-OutputLine "[OK] Toolkit found"
+        Set-Progress 50
+
+        Set-Status "Starting deployment session..."
+        Add-OutputLine "[*] Starting remote session..."
 
         $session = New-PSSession -ComputerName $ComputerName
 
@@ -385,57 +433,72 @@ function Invoke-PSADTDeployment {
                 Start-Process -FilePath $exe -ArgumentList '-DeploymentType Install -DeployMode Silent' -Wait
             } -ArgumentList $RemoteDeployPath
 
-            Write-Output "Waiting for log file..."
+            Add-OutputLine "[OK] Deployment started"
+
+            Set-Status "Waiting for log file..."
+            Add-OutputLine "[*] Waiting for log file..."
 
             $initialLogs = Get-ChildItem $RemoteLogDir -Filter "*.log" -ErrorAction SilentlyContinue
             $initialNames = $initialLogs.Name
             $logFile = $null
+            $waitCount = 0
 
-            while (-not $logFile) {
+            while (-not $logFile -and $waitCount -lt 120) {
                 Start-Sleep 1
+                $waitCount++
                 $current = Get-ChildItem $RemoteLogDir -Filter "*.log" -ErrorAction SilentlyContinue
                 $new = $current | Where-Object { $_.Name -notin $initialNames } | Sort-Object LastWriteTime -Descending | Select-Object -First 1
                 if ($new) { $logFile = $new.FullName }
             }
 
-            Write-Output "Tailing log: $logFile"
+            if (-not $logFile) {
+                Add-OutputLine "[WARN] Log file not found"
+            } else {
+                Add-OutputLine "[OK] Log: $logFile"
+                Set-Progress 65
 
-            $lastSize = 0
-            $quietCounter = 0
+                Set-Status "Monitoring deployment..."
+                Add-OutputLine "[*] Monitoring deployment..."
+                
+                $lastSize = 0
+                $quietCounter = 0
 
-            while ($quietCounter -lt $QuietSeconds) {
-                if (Test-Path $logFile) {
-                    $size = (Get-Item $logFile).Length
-                    if ($size -ne $lastSize) {
-                        Get-Content $logFile -Tail 10 | ForEach-Object { Write-Output $_ }
-                        $lastSize = $size
-                        $quietCounter = 0
-                    } else {
-                        $quietCounter++
+                while ($quietCounter -lt $QuietSeconds) {
+                    if (Test-Path $logFile) {
+                        $size = (Get-Item $logFile).Length
+                        if ($size -ne $lastSize) {
+                            $lastSize = $size
+                            $quietCounter = 0
+                        } else {
+                            $quietCounter++
+                        }
                     }
+                    Start-Sleep 1
                 }
-                Start-Sleep 1
             }
 
-            Write-Output "Deployment activity quiet. Waiting for process completion..."
+            Add-OutputLine "[*] Waiting for process completion..."
+            Set-Progress 85
             $result = Receive-Job $job -Wait -AutoRemoveJob
 
         }
         finally {
             if ($session) {
-                Remove-PSSession $session
+                Remove-PSSession $session -ErrorAction SilentlyContinue
             }
         }
 
-        Write-Output ""
-        Write-Output "============================================================"
-        Write-Output " Deployment Complete"
-        Write-Output "============================================================"
-        Write-Output "Computer   : $ComputerName"
-        Write-Output "Deployment : $DeploymentName"
-        Write-Output "Path       : $RemoteDeployPath"
-        Write-Output "Log        : $logFile"
-        Write-Output "============================================================"
+        Set-Progress 100
+        Set-Status "Deployment complete"
+        Add-OutputLine ""
+        Add-OutputLine "============================================================"
+        Add-OutputLine " Deployment Complete"
+        Add-OutputLine "============================================================"
+        Add-OutputLine "Computer   : $ComputerName"
+        Add-OutputLine "Deployment : $DeploymentName"
+        Add-OutputLine "Path       : $RemoteDeployPath"
+        Add-OutputLine "Log        : $logFile"
+        Add-OutputLine "============================================================"
 
         return @{
             ComputerName = $ComputerName
@@ -445,7 +508,10 @@ function Invoke-PSADTDeployment {
         }
     }
     catch {
-        Write-Output "ERROR: $($_.Exception.Message)"
+        Add-OutputLine ""
+        Add-OutputLine "[ERROR] $($_.Exception.Message)"
+        Set-Status "Deployment failed"
+        Set-Progress 0
         throw
     }
 }
@@ -454,17 +520,6 @@ function Invoke-PSADTDeployment {
 # Event Handlers
 # ============================================================
 
-$BtnBrowse.Add_Click({
-    Add-Type -AssemblyName System.Windows.Forms
-    $FolderDialog = New-Object System.Windows.Forms.FolderBrowserDialog
-    $FolderDialog.Description = "Select PSADT deployment folder"
-    $FolderDialog.ShowNewFolderButton = $false
-    
-    if ($FolderDialog.ShowDialog() -eq [System.Windows.Forms.DialogResult]::OK) {
-        $SourcePathInput.Text = $FolderDialog.SelectedPath
-    }
-})
-
 $BtnDeploy.Add_Click({
     if ([string]::IsNullOrWhiteSpace($ComputerInput.Text)) {
         [System.Windows.MessageBox]::Show("Please enter a computer name", "Validation", [System.Windows.MessageBoxButton]::OK, [System.Windows.MessageBoxImage]::Warning)
@@ -472,7 +527,7 @@ $BtnDeploy.Add_Click({
     }
     
     if ([string]::IsNullOrWhiteSpace($SourcePathInput.Text)) {
-        [System.Windows.MessageBox]::Show("Please select a source deployment path", "Validation", [System.Windows.MessageBoxButton]::OK, [System.Windows.MessageBoxImage]::Warning)
+        [System.Windows.MessageBox]::Show("Please enter a source deployment path", "Validation", [System.Windows.MessageBoxButton]::OK, [System.Windows.MessageBoxImage]::Warning)
         return
     }
     
@@ -484,20 +539,12 @@ $BtnDeploy.Add_Click({
     $BtnDeploy.IsEnabled = $false
     $ComputerInput.IsReadOnly = $true
     $SourcePathInput.IsReadOnly = $true
-    $BtnBrowse.IsEnabled = $false
     $OutputBox.Clear()
+    $ProgressBar.Value = 0
     $Subtitle.Text = "Deploying..."
 
     try {
-        $output = Invoke-PSADTDeployment -ComputerName $ComputerInput.Text -SourceDeploymentPath $SourcePathInput.Text -ErrorVariable err 2>&1 | Out-String
-        $OutputBox.Text = $output
-        $OutputBox.ScrollToEnd()
-
-        $script:LastDeployment = @{
-            ComputerName = $ComputerInput.Text
-            DeploymentName = Split-Path $SourcePathInput.Text -Leaf
-            LogFile = $null
-        }
+        $script:LastDeployment = Invoke-PSADTDeployment -ComputerName $ComputerInput.Text -SourceDeploymentPath $SourcePathInput.Text
 
         $BtnReRun.IsEnabled = $true
         $BtnOpenFolder.IsEnabled = $true
@@ -505,49 +552,49 @@ $BtnDeploy.Add_Click({
         $BtnRefreshLogs.IsEnabled = $true
         $BtnOpenLogFile.IsEnabled = $true
 
-        $Subtitle.Text = "Deployment complete"
     }
     catch {
-        $OutputBox.Text = "Deployment failed: $($_.Exception.Message)"
-        $Subtitle.Text = "Deployment failed"
+        Set-Status "Deployment failed"
     }
     finally {
         $BtnDeploy.IsEnabled = $true
         $ComputerInput.IsReadOnly = $false
         $SourcePathInput.IsReadOnly = $false
-        $BtnBrowse.IsEnabled = $true
     }
 })
 
 $BtnReRun.Add_Click({
     if (-not $script:LastDeployment) { return }
     
-    $OutputBox.Clear()
-    $Subtitle.Text = "Re-running..."
+    $OutputBox.AppendText("`n[*] Re-running deployment...`n")
+    $OutputBox.ScrollToEnd()
+    Set-Status "Re-running..."
+    Set-Progress 0
 
     try {
         Invoke-Command -ComputerName $script:LastDeployment.ComputerName -ScriptBlock {
             param($Path)
             $exe = Join-Path $Path "Invoke-AppDeployToolkit.exe"
             Start-Process -FilePath $exe -ArgumentList '-DeploymentType Install -DeployMode Silent' -Wait
-        } -ArgumentList "C:\PSADT\$($script:LastDeployment.DeploymentName)"
+        } -ArgumentList $script:LastDeployment.Path
         
-        $OutputBox.Text = "Re-run deployment completed"
-        $Subtitle.Text = "Re-run complete"
+        Add-OutputLine "[OK] Re-run deployment completed"
+        Set-Status "Re-run complete"
+        Set-Progress 100
     }
     catch {
-        $OutputBox.Text = "Re-run failed: $($_.Exception.Message)"
-        $Subtitle.Text = "Re-run failed"
+        Add-OutputLine "[ERROR] Re-run failed: $($_.Exception.Message)"
+        Set-Status "Re-run failed"
     }
 })
 
 $BtnOpenFolder.Add_Click({
     if (-not $script:LastDeployment) { return }
     try {
-        Invoke-Item "\\$($script:LastDeployment.ComputerName)\C$\PSADT\$($script:LastDeployment.DeploymentName)"
+        Invoke-Item "\\$($script:LastDeployment.ComputerName)\C$\PSADT\$($script:LastDeployment.Deployment)"
     }
     catch {
-        [System.Windows.MessageBox]::Show("Could not open folder", "Error", [System.Windows.MessageBoxButton]::OK, [System.Windows.MessageBoxImage]::Error)
+        [System.Windows.MessageBox]::Show("Could not open folder: $_", "Error", [System.Windows.MessageBoxButton]::OK, [System.Windows.MessageBoxImage]::Error)
     }
 })
 
@@ -561,14 +608,14 @@ $BtnDeleteFolder.Add_Click({
             Invoke-Command -ComputerName $script:LastDeployment.ComputerName -ScriptBlock {
                 param($Path)
                 Remove-Item -Path $Path -Recurse -Force -ErrorAction SilentlyContinue
-            } -ArgumentList "C:\PSADT\$($script:LastDeployment.DeploymentName)"
+            } -ArgumentList $script:LastDeployment.Path
             
-            $OutputBox.Text = "Folder deleted"
-            $Subtitle.Text = "Deleted"
+            Add-OutputLine "[OK] Folder deleted"
+            Set-Status "Deleted"
         }
         catch {
-            $OutputBox.Text = "Delete failed: $($_.Exception.Message)"
-            $Subtitle.Text = "Delete failed"
+            Add-OutputLine "[ERROR] Delete failed: $($_.Exception.Message)"
+            Set-Status "Delete failed"
         }
     }
 })
@@ -585,7 +632,7 @@ $BtnRefreshLogs.Add_Click({
         $LogViewer.ScrollToEnd()
     }
     catch {
-        [System.Windows.MessageBox]::Show("Could not read log file", "Error", [System.Windows.MessageBoxButton]::OK, [System.Windows.MessageBoxImage]::Error)
+        [System.Windows.MessageBox]::Show("Could not read log file: $_", "Error", [System.Windows.MessageBoxButton]::OK, [System.Windows.MessageBoxImage]::Error)
     }
 })
 
@@ -600,7 +647,7 @@ $BtnOpenLogFile.Add_Click({
         explorer.exe $logPath
     }
     catch {
-        [System.Windows.MessageBox]::Show("Could not open folder", "Error", [System.Windows.MessageBoxButton]::OK, [System.Windows.MessageBoxImage]::Error)
+        [System.Windows.MessageBox]::Show("Could not open folder: $_", "Error", [System.Windows.MessageBoxButton]::OK, [System.Windows.MessageBoxImage]::Error)
     }
 })
 
