@@ -198,12 +198,12 @@ $xaml = @"
                         <!-- Action Buttons -->
                         <ui:Button x:Name="BtnDeploy"
                                    Style="{StaticResource UnifiedButton}"
-                                   Content="▶ Start Deployment"
+                                   Content="Start Deployment"
                                    Margin="0,0,0,8"/>
 
                         <ui:Button x:Name="BtnReRun"
                                    Style="{StaticResource UnifiedButton}"
-                                   Content="🔄 Re-run Deployment"
+                                   Content="Re-run Deployment"
                                    Margin="0,0,0,8"
                                    IsEnabled="False"/>
 
@@ -215,13 +215,13 @@ $xaml = @"
                             <ui:Button x:Name="BtnOpenFolder"
                                        Grid.Column="0"
                                        Style="{StaticResource UnifiedButton}"
-                                       Content="📁 Open Folder"
+                                       Content="Open Folder"
                                        IsEnabled="False"
                                        Margin="0,0,4,0"/>
                             <ui:Button x:Name="BtnDeleteFolder"
                                        Grid.Column="1"
                                        Style="{StaticResource UnifiedButton}"
-                                       Content="🗑 Delete Folder"
+                                       Content="Delete Folder"
                                        IsEnabled="False"
                                        Margin="4,0,0,0"/>
                         </Grid>
@@ -301,13 +301,13 @@ $xaml = @"
                             <ui:Button x:Name="BtnRefreshLogs"
                                        Grid.Column="0"
                                        Style="{StaticResource UnifiedButton}"
-                                       Content="🔄 Refresh Logs"
+                                       Content="Refresh Logs"
                                        IsEnabled="False"
                                        Margin="0,0,4,0"/>
                             <ui:Button x:Name="BtnOpenLogFile"
                                        Grid.Column="1"
                                        Style="{StaticResource UnifiedButton}"
-                                       Content="📂 Open in Explorer"
+                                       Content="Open in Explorer"
                                        IsEnabled="False"
                                        Margin="4,0,0,0"/>
                         </Grid>
@@ -451,11 +451,11 @@ function Test-RemoteConnection {
     
     try {
         $null = Test-Connection -ComputerName $ComputerInput.Text -Count 1 -ErrorAction Stop
-        Update-OutputConsole "[✓] Connection successful!"
+        Update-OutputConsole "[OK] Connection successful!"
         return $true
     }
     catch {
-        Update-OutputConsole "[✗] Connection failed: $($_.Exception.Message)"
+        Update-OutputConsole "[ERROR] Connection failed: $($_.Exception.Message)"
         Update-Status "Connection failed"
         return $false
     }
@@ -503,15 +503,16 @@ function Copy-DeploymentFiles {
             }
             
             Update-Progress $percent
-            Update-OutputConsole "  ✓ $relative"
+            Update-OutputConsole "  [OK] $relative"
         }
         
-        Update-OutputConsole "[✓] File copy complete ($fileCount files, $([math]::Round($copiedBytes / 1MB, 2))MB)"
+        $sizeMB = [math]::Round($copiedBytes / 1MB, 2)
+        Update-OutputConsole "[OK] File copy complete ($fileCount files, $sizeMB MB)"
         Update-Progress 25
         return $true
     }
     catch {
-        Update-OutputConsole "[✗] Copy failed: $($_.Exception.Message)"
+        Update-OutputConsole "[ERROR] Copy failed: $($_.Exception.Message)"
         Update-Status "Copy failed"
         return $false
     }
@@ -522,12 +523,12 @@ function Test-RemoteToolkit {
     Update-OutputConsole "[*] Checking for Invoke-AppDeployToolkit.exe..."
     
     if (-not (Test-Path $script:Config.RemoteExe)) {
-        Update-OutputConsole "[✗] Invoke-AppDeployToolkit.exe not found"
+        Update-OutputConsole "[ERROR] Invoke-AppDeployToolkit.exe not found"
         Update-Status "Toolkit validation failed"
         return $false
     }
     
-    Update-OutputConsole "[✓] Toolkit found!"
+    Update-OutputConsole "[OK] Toolkit found!"
     Update-Progress 50
     return $true
 }
@@ -551,7 +552,7 @@ function Start-RemoteDeployment {
                     
             } -ArgumentList $script:Config.RemoteDeployPath
             
-            Update-OutputConsole "[✓] Deployment job started (Job: $($job.Id))"
+            Update-OutputConsole "[OK] Deployment job started (Job: $($job.Id))"
             
             # Wait for log file
             Update-Status "Waiting for logs..."
@@ -580,12 +581,12 @@ function Start-RemoteDeployment {
             }
             
             if (-not $logFile) {
-                Update-OutputConsole "[⚠] Log file not found within timeout"
+                Update-OutputConsole "[WARN] Log file not found within timeout"
                 $script:Config.CurrentLogFile = ""
             }
             else {
                 $script:Config.CurrentLogFile = $logFile
-                Update-OutputConsole "[✓] Log file found: $logFile"
+                Update-OutputConsole "[OK] Log file found: $logFile"
                 Update-Progress 75
                 
                 # Tail log until quiet
@@ -618,7 +619,7 @@ function Start-RemoteDeployment {
             
             Update-Progress 100
             Update-Status "Deployment complete!"
-            Update-OutputConsole "[✓] Deployment finished successfully!"
+            Update-OutputConsole "[OK] Deployment finished successfully!"
             
             $BtnReRun.IsEnabled = $true
             $BtnOpenFolder.IsEnabled = $true
@@ -635,7 +636,7 @@ function Start-RemoteDeployment {
         }
     }
     catch {
-        Update-OutputConsole "[✗] Deployment failed: $($_.Exception.Message)"
+        Update-OutputConsole "[ERROR] Deployment failed: $($_.Exception.Message)"
         Update-Status "Deployment failed"
         Update-Progress 0
         return $false
@@ -657,11 +658,11 @@ function Invoke-ReRunDeployment {
                 
         } -ArgumentList $script:Config.RemoteDeployPath
         
-        Update-OutputConsole "[✓] Re-run deployment completed!"
+        Update-OutputConsole "[OK] Re-run deployment completed!"
         Update-Status "Re-run completed"
     }
     catch {
-        Update-OutputConsole "[✗] Re-run failed: $($_.Exception.Message)"
+        Update-OutputConsole "[ERROR] Re-run failed: $($_.Exception.Message)"
         Update-Status "Re-run failed"
     }
 }
@@ -681,11 +682,11 @@ function Invoke-DeleteRemoteFolder {
                 Remove-Item -Path $Path -Recurse -Force -ErrorAction SilentlyContinue
             } -ArgumentList $script:Config.RemoteDeployPath
             
-            Update-OutputConsole "[✓] Deployment folder removed"
+            Update-OutputConsole "[OK] Deployment folder removed"
             Update-Status "Folder deleted"
         }
         catch {
-            Update-OutputConsole "[✗] Delete failed: $($_.Exception.Message)"
+            Update-OutputConsole "[ERROR] Delete failed: $($_.Exception.Message)"
             Update-Status "Delete failed"
         }
     }
@@ -727,11 +728,11 @@ function Open-LogFile {
 # ============================================================
 
 $BtnBrowse.Add_Click({
+    Add-Type -AssemblyName System.Windows.Forms
     $FolderDialog = New-Object System.Windows.Forms.FolderBrowserDialog
     $FolderDialog.Description = "Select PSADT deployment folder"
     $FolderDialog.ShowNewFolderButton = $false
     
-    Add-Type -AssemblyName System.Windows.Forms
     if ($FolderDialog.ShowDialog() -eq [System.Windows.Forms.DialogResult]::OK) {
         $SourcePathInput.Text = $FolderDialog.SelectedPath
     }
@@ -761,7 +762,7 @@ $BtnDeploy.Add_Click({
             Start-RemoteDeployment
         }
         catch {
-            Update-OutputConsole "[✗] Error: $($_.Exception.Message)"
+            Update-OutputConsole "[ERROR] $($_.Exception.Message)"
             Update-Status "Error occurred"
         }
         finally {
@@ -810,5 +811,7 @@ $window.Add_Closed({
 # ============================================================
 # Show Form
 # ============================================================
-Update-OutputConsole "==========================================`nPSADT Remote Deployment Tool Ready`n=========================================="
+Update-OutputConsole "=========================================="
+Update-OutputConsole "PSADT Remote Deployment Tool Ready"
+Update-OutputConsole "=========================================="
 $app.Run($window)
