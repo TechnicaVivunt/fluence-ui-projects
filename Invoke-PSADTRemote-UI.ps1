@@ -25,21 +25,6 @@ if (-not $app) { $app = New-Object System.Windows.Application }
 )
 
 # ============================================================
-# Configuration
-# ============================================================
-$script:Config = @{
-    ComputerName           = ""
-    SourceDeploymentPath   = ""
-    RemoteDeployPath       = ""
-    RemoteUNC              = ""
-    RemoteExe              = ""
-    RemoteLogDir           = ""
-    DeploymentName         = ""
-    CurrentLogFile         = ""
-    QuietSeconds           = 5
-}
-
-# ============================================================
 # XAML UI
 # ============================================================
 $xaml = @"
@@ -326,98 +311,70 @@ $BtnClose.Add_Click({ $window.Close() })
 # Helper Functions
 # ============================================================
 
-function Update-OutputConsole {
+function Add-OutputLine {
     param([string]$Message)
-    
-    if ($OutputBox.Text.Length -gt 30000) {
-        $OutputBox.Text = ""
-    }
-    
+    if ($OutputBox.Text.Length -gt 30000) { $OutputBox.Text = "" }
     $OutputBox.Text += "$Message`n"
     $OutputBox.ScrollToEnd()
 }
 
-function Update-Status {
+function Set-Status {
     param([string]$Message)
-    
     $StatusText.Text = $Message
     $Subtitle.Text = $Message
 }
 
-function Update-Progress {
+function Set-Progress {
     param([int]$Value)
-    
     $ProgressBar.Value = [Math]::Min($Value, 100)
 }
 
-function Validate-Inputs {
-    if ([string]::IsNullOrWhiteSpace($ComputerInput.Text)) {
-        [System.Windows.MessageBox]::Show("Please enter a computer name", "Validation Error", [System.Windows.MessageBoxButton]::OK, [System.Windows.MessageBoxImage]::Warning)
-        return $false
-    }
-    
-    if ([string]::IsNullOrWhiteSpace($SourcePathInput.Text)) {
-        [System.Windows.MessageBox]::Show("Please select a source deployment path", "Validation Error", [System.Windows.MessageBoxButton]::OK, [System.Windows.MessageBoxImage]::Warning)
-        return $false
-    }
-    
-    if (-not (Test-Path $SourcePathInput.Text)) {
-        [System.Windows.MessageBox]::Show("Source path does not exist", "Validation Error", [System.Windows.MessageBoxButton]::OK, [System.Windows.MessageBoxImage]::Warning)
-        return $false
-    }
-    
-    return $true
-}
+# ============================================================
+# Deployment Logic
+# ============================================================
 
-function Update-DeploymentConfig {
-    $script:Config.ComputerName = $ComputerInput.Text
-    $script:Config.SourceDeploymentPath = $SourcePathInput.Text
-    $script:Config.DeploymentName = Split-Path $SourcePathInput.Text -Leaf
-    $script:Config.RemoteDeployPath = "C:\PSADT\$($script:Config.DeploymentName)"
-    $script:Config.RemoteUNC = "\\$($script:Config.ComputerName)\C$\PSADT\$($script:Config.DeploymentName)"
-    $script:Config.RemoteExe = Join-Path $script:Config.RemoteUNC "Invoke-AppDeployToolkit.exe"
-    $script:Config.RemoteLogDir = "\\$($script:Config.ComputerName)\C$\Windows\Logs\Software"
-}
+function Invoke-PSADTDeployment {
+    param(
+        [string]$ComputerName,
+        [string]$SourceDeploymentPath,
+        [int]$QuietSeconds = 5
+    )
 
-function Test-RemoteConnection {
-    Update-Status "Testing connection..."
-    Update-OutputConsole "[*] Testing connection..."
-    
+    $DeploymentName = Split-Path $SourceDeploymentPath -Leaf
+    $RemoteDeployPath = "C:\PSADT\$DeploymentName"
+    $RemoteUNC = "\\$ComputerName\C$\PSADT\$DeploymentName"
+    $RemoteExe = Join-Path $RemoteUNC "Invoke-AppDeployToolkit.exe"
+    $RemoteLogDir = "\\$ComputerName\C$\Windows\Logs\Software"
+
     try {
-        $null = Test-Connection -ComputerName $ComputerInput.Text -Count 1 -ErrorAction Stop
-        Update-OutputConsole "[OK] Connected"
-        return $true
-    }
-    catch {
-        Update-OutputConsole "[ERROR] Connection failed"
-        Update-Status "Connection failed"
-        return $false
-    }
-}
+        # Test connection
+        Set-Status "Testing connection..."
+        Add-OutputLine "[*] Testing connection..."
+        $null = Test-Connection -ComputerName $ComputerName -Count 1 -ErrorAction Stop
+        Add-OutputLine "[OK] Connected"
 
-function Copy-DeploymentFiles {
-    Update-Status "Copying files..."
-    Update-OutputConsole "[*] Copying deployment..."
-    
-    try {
-        Invoke-Command -ComputerName $script:Config.ComputerName -ScriptBlock {
+        # Create remote directory
+        Set-Status "Copying files..."
+        Add-OutputLine "[*] Copying deployment..."
+        Invoke-Command -ComputerName $ComputerName -ScriptBlock {
             param($Path)
             if (-not (Test-Path $Path)) {
                 New-Item -ItemType Directory -Path $Path -Force | Out-Null
             }
-        } -ArgumentList $script:Config.RemoteDeployPath
-        
-        $files = Get-ChildItem -Path $script:Config.SourceDeploymentPath -Recurse -File
+        } -ArgumentList $RemoteDeployPath
+
+        # Copy files
+        $files = Get-ChildItem -Path $SourceDeploymentPath -Recurse -File
         $totalBytes = ($files | Measure-Object Length -Sum).Sum
         $copiedBytes = 0
         $fileCount = 0
-        
+
         foreach ($file in $files) {
             $relative = $file.FullName.Substring(
-                $script:Config.SourceDeploymentPath.TrimEnd('\').Length
+                $SourceDeploymentPath.TrimEnd('\').Length
             ).TrimStart('\')
             
-            $dest = Join-Path $script:Config.RemoteUNC $relative
+            $dest = Join-Path $RemoteUNC $relative
             $destFolder = Split-Path $dest -Parent
             
             if (-not (Test-Path $destFolder)) {
@@ -430,232 +387,113 @@ function Copy-DeploymentFiles {
             
             $percent = if ($totalBytes -gt 0) {
                 [math]::Round(($copiedBytes / $totalBytes) * 100, 2)
-            }
-            else {
-                0
-            }
+            } else { 0 }
             
-            Update-Progress $percent
+            Set-Progress $percent
         }
-        
-        $sizeMB = [math]::Round($copiedBytes / 1MB, 2)
-        Update-OutputConsole "[OK] Copy complete ($fileCount files)"
-        Update-Progress 25
-        return $true
-    }
-    catch {
-        Update-OutputConsole "[ERROR] Copy failed"
-        Update-Status "Copy failed"
-        return $false
-    }
-}
 
-function Test-RemoteToolkit {
-    Update-Status "Validating toolkit..."
-    Update-OutputConsole "[*] Checking toolkit..."
-    
-    if (-not (Test-Path $script:Config.RemoteExe)) {
-        Update-OutputConsole "[ERROR] Toolkit not found"
-        Update-Status "Toolkit validation failed"
-        return $false
-    }
-    
-    Update-OutputConsole "[OK] Toolkit found"
-    Update-Progress 50
-    return $true
-}
+        Add-OutputLine "[OK] Copy complete ($fileCount files)"
+        Set-Progress 25
 
-function Start-RemoteDeployment {
-    Update-Status "Deploying..."
-    Update-OutputConsole "[*] Launching deployment..."
-    Update-Progress 50
-    
-    try {
-        $session = New-PSSession -ComputerName $script:Config.ComputerName -ErrorAction Stop
+        # Validate toolkit
+        Set-Status "Validating toolkit..."
+        Add-OutputLine "[*] Checking toolkit..."
+        if (-not (Test-Path $RemoteExe)) {
+            Add-OutputLine "[ERROR] Toolkit not found"
+            Set-Status "Toolkit validation failed"
+            return $false
+        }
+        Add-OutputLine "[OK] Toolkit found"
+        Set-Progress 50
+
+        # Start deployment
+        Set-Status "Deploying..."
+        Add-OutputLine "[*] Launching deployment..."
+        $session = New-PSSession -ComputerName $ComputerName -ErrorAction Stop
         
         try {
             $job = Invoke-Command -Session $session -AsJob -ScriptBlock {
                 param($Path)
-                
                 $exe = Join-Path $Path "Invoke-AppDeployToolkit.exe"
-                Start-Process -FilePath $exe `
-                    -ArgumentList '-DeploymentType Install -DeployMode Silent' `
-                    -Wait
-                    
-            } -ArgumentList $script:Config.RemoteDeployPath
-            
-            Update-OutputConsole "[OK] Job started"
-            
+                Start-Process -FilePath $exe -ArgumentList '-DeploymentType Install -DeployMode Silent' -Wait
+            } -ArgumentList $RemoteDeployPath
+
+            Add-OutputLine "[OK] Job started"
+
             # Wait for log file
-            Update-Status "Waiting for logs..."
-            Update-OutputConsole "[*] Waiting for log..."
+            Set-Status "Waiting for logs..."
+            Add-OutputLine "[*] Waiting for log..."
             
-            $initialLogs = Get-ChildItem $script:Config.RemoteLogDir -Filter "*.log" -ErrorAction SilentlyContinue
+            $initialLogs = Get-ChildItem $RemoteLogDir -Filter "*.log" -ErrorAction SilentlyContinue
             $initialNames = $initialLogs.Name
-            
             $logFile = $null
             $waitCount = 0
-            
+
             while (-not $logFile -and $waitCount -lt 60) {
                 Start-Sleep 1
                 $waitCount++
-                
-                $current = Get-ChildItem $script:Config.RemoteLogDir -Filter "*.log" -ErrorAction SilentlyContinue
-                
-                $new = $current |
-                    Where-Object { $_.Name -notin $initialNames } |
-                    Sort-Object LastWriteTime -Descending |
-                    Select-Object -First 1
-                
-                if ($new) {
-                    $logFile = $new.FullName
-                }
+                $current = Get-ChildItem $RemoteLogDir -Filter "*.log" -ErrorAction SilentlyContinue
+                $new = $current | Where-Object { $_.Name -notin $initialNames } | Sort-Object LastWriteTime -Descending | Select-Object -First 1
+                if ($new) { $logFile = $new.FullName }
             }
-            
+
             if (-not $logFile) {
-                Update-OutputConsole "[WARN] Log not found"
-                $script:Config.CurrentLogFile = ""
-            }
-            else {
-                $script:Config.CurrentLogFile = $logFile
-                Update-OutputConsole "[OK] Log found"
-                Update-Progress 75
-                
+                Add-OutputLine "[WARN] Log not found"
+            } else {
+                Add-OutputLine "[OK] Log found: $logFile"
+                Set-Progress 75
+
                 # Tail log until quiet
+                Set-Status "Monitoring..."
                 $lastSize = 0
                 $quietCounter = 0
-                
-                Update-Status "Monitoring..."
-                
-                while ($quietCounter -lt $script:Config.QuietSeconds) {
+
+                while ($quietCounter -lt $QuietSeconds) {
                     if (Test-Path $logFile) {
                         $size = (Get-Item $logFile).Length
-                        
                         if ($size -ne $lastSize) {
                             $lastSize = $size
                             $quietCounter = 0
-                        }
-                        else {
+                        } else {
                             $quietCounter++
                         }
                     }
-                    
                     Start-Sleep 1
                 }
             }
-            
-            Update-OutputConsole "[*] Waiting for job..."
+
+            Add-OutputLine "[*] Waiting for job..."
             $result = Receive-Job $job -Wait -AutoRemoveJob
-            
-            Update-Progress 100
-            Update-Status "Deployment complete"
-            Update-OutputConsole "[OK] Deployment finished"
-            
+
+            Set-Progress 100
+            Set-Status "Deployment complete"
+            Add-OutputLine "[OK] Deployment finished"
+
             $BtnReRun.IsEnabled = $true
             $BtnOpenFolder.IsEnabled = $true
             $BtnDeleteFolder.IsEnabled = $true
             $BtnRefreshLogs.IsEnabled = $true
             $BtnOpenLogFile.IsEnabled = $true
-            
-            return $true
+
+            return @{ LogFile = $logFile; ComputerName = $ComputerName; DeploymentName = $DeploymentName }
         }
         finally {
-            if ($session) {
-                Remove-PSSession $session
-            }
+            if ($session) { Remove-PSSession $session }
         }
     }
     catch {
-        Update-OutputConsole "[ERROR] Deployment failed"
-        Update-Status "Deployment failed"
-        Update-Progress 0
+        Add-OutputLine "[ERROR] $($_.Exception.Message)"
+        Set-Status "Deployment failed"
+        Set-Progress 0
         return $false
-    }
-}
-
-function Invoke-ReRunDeployment {
-    Update-Status "Re-running..."
-    Update-OutputConsole "[*] Re-running..."
-    
-    try {
-        Invoke-Command -ComputerName $script:Config.ComputerName -ScriptBlock {
-            param($Path)
-            
-            $exe = Join-Path $Path "Invoke-AppDeployToolkit.exe"
-            Start-Process -FilePath $exe `
-                -ArgumentList '-DeploymentType Install -DeployMode Silent' `
-                -Wait
-                
-        } -ArgumentList $script:Config.RemoteDeployPath
-        
-        Update-OutputConsole "[OK] Re-run complete"
-        Update-Status "Re-run complete"
-    }
-    catch {
-        Update-OutputConsole "[ERROR] Re-run failed"
-        Update-Status "Re-run failed"
-    }
-}
-
-function Invoke-DeleteRemoteFolder {
-    $result = [System.Windows.MessageBox]::Show(
-        "Delete deployment folder?",
-        "Confirm",
-        [System.Windows.MessageBoxButton]::YesNo,
-        [System.Windows.MessageBoxImage]::Warning
-    )
-    
-    if ($result -eq [System.Windows.MessageBoxResult]::Yes) {
-        try {
-            Invoke-Command -ComputerName $script:Config.ComputerName -ScriptBlock {
-                param($Path)
-                Remove-Item -Path $Path -Recurse -Force -ErrorAction SilentlyContinue
-            } -ArgumentList $script:Config.RemoteDeployPath
-            
-            Update-OutputConsole "[OK] Folder deleted"
-            Update-Status "Deleted"
-        }
-        catch {
-            Update-OutputConsole "[ERROR] Delete failed"
-            Update-Status "Delete failed"
-        }
-    }
-}
-
-function Refresh-LogContent {
-    if ([string]::IsNullOrWhiteSpace($script:Config.CurrentLogFile)) {
-        [System.Windows.MessageBox]::Show("No log file available", "Info", [System.Windows.MessageBoxButton]::OK, [System.Windows.MessageBoxImage]::Information)
-        return
-    }
-    
-    try {
-        $content = Get-Content $script:Config.CurrentLogFile -ErrorAction SilentlyContinue | Out-String
-        $LogViewer.Text = $content
-        $LogViewer.ScrollToEnd()
-    }
-    catch {
-        [System.Windows.MessageBox]::Show("Could not read log file", "Error", [System.Windows.MessageBoxButton]::OK, [System.Windows.MessageBoxImage]::Error)
-    }
-}
-
-function Open-LogFile {
-    if ([string]::IsNullOrWhiteSpace($script:Config.CurrentLogFile)) {
-        [System.Windows.MessageBox]::Show("No log file available", "Info", [System.Windows.MessageBoxButton]::OK, [System.Windows.MessageBoxImage]::Information)
-        return
-    }
-    
-    try {
-        $logPath = Split-Path $script:Config.CurrentLogFile -Parent
-        explorer.exe $logPath
-    }
-    catch {
-        [System.Windows.MessageBox]::Show("Could not open folder", "Error", [System.Windows.MessageBoxButton]::OK, [System.Windows.MessageBoxImage]::Error)
     }
 }
 
 # ============================================================
 # Event Handlers
 # ============================================================
+
+$script:LastDeployment = $null
 
 $BtnBrowse.Add_Click({
     Add-Type -AssemblyName System.Windows.Forms
@@ -669,77 +507,62 @@ $BtnBrowse.Add_Click({
 })
 
 $BtnDeploy.Add_Click({
-    if (-not (Validate-Inputs)) { return }
+    if ([string]::IsNullOrWhiteSpace($ComputerInput.Text)) {
+        [System.Windows.MessageBox]::Show("Please enter a computer name", "Validation Error", [System.Windows.MessageBoxButton]::OK, [System.Windows.MessageBoxImage]::Warning)
+        return
+    }
     
+    if ([string]::IsNullOrWhiteSpace($SourcePathInput.Text)) {
+        [System.Windows.MessageBox]::Show("Please select a source deployment path", "Validation Error", [System.Windows.MessageBoxButton]::OK, [System.Windows.MessageBoxImage]::Warning)
+        return
+    }
+    
+    if (-not (Test-Path $SourcePathInput.Text)) {
+        [System.Windows.MessageBox]::Show("Source path does not exist", "Validation Error", [System.Windows.MessageBoxButton]::OK, [System.Windows.MessageBoxImage]::Warning)
+        return
+    }
+
     $BtnDeploy.IsEnabled = $false
     $ComputerInput.IsReadOnly = $true
     $SourcePathInput.IsReadOnly = $true
     $BtnBrowse.IsEnabled = $false
     $OutputBox.Clear()
-    
-    $deployScript = {
-        try {
-            Update-DeploymentConfig
-            Update-Progress 0
-            Update-OutputConsole "=== PSADT Deployment ==="
-            
-            if (-not (Test-RemoteConnection)) { return }
-            if (-not (Copy-DeploymentFiles)) { return }
-            if (-not (Test-RemoteToolkit)) { return }
-            
-            Start-RemoteDeployment
-        }
-        catch {
-            Update-OutputConsole "[ERROR] Deployment error"
-            Update-Status "Error"
-        }
-        finally {
-            $BtnDeploy.IsEnabled = $true
-            $ComputerInput.IsReadOnly = $false
-            $SourcePathInput.IsReadOnly = $false
-            $BtnBrowse.IsEnabled = $true
-        }
-    }
-    
-    $runspace = [System.Management.Automation.RunspaceFactory]::CreateRunspace()
-    $runspace.Open()
-    $runspace.SessionStateProxy.SetVariable('Config', $script:Config)
-    $runspace.SessionStateProxy.SetVariable('Update-OutputConsole', (Get-Item Function:\Update-OutputConsole))
-    $runspace.SessionStateProxy.SetVariable('Update-Status', (Get-Item Function:\Update-Status))
-    $runspace.SessionStateProxy.SetVariable('Update-Progress', (Get-Item Function:\Update-Progress))
-    $runspace.SessionStateProxy.SetVariable('Test-RemoteConnection', (Get-Item Function:\Test-RemoteConnection))
-    $runspace.SessionStateProxy.SetVariable('Copy-DeploymentFiles', (Get-Item Function:\Copy-DeploymentFiles))
-    $runspace.SessionStateProxy.SetVariable('Test-RemoteToolkit', (Get-Item Function:\Test-RemoteToolkit))
-    $runspace.SessionStateProxy.SetVariable('Start-RemoteDeployment', (Get-Item Function:\Start-RemoteDeployment))
-    $runspace.SessionStateProxy.SetVariable('Update-DeploymentConfig', (Get-Item Function:\Update-DeploymentConfig))
-    
-    $ps = [System.Management.Automation.PowerShell]::Create()
-    $ps.Runspace = $runspace
-    [void]$ps.AddScript($deployScript)
-    [void]$ps.BeginInvoke()
+
+    Add-OutputLine "=== PSADT Deployment ==="
+    $script:LastDeployment = Invoke-PSADTDeployment -ComputerName $ComputerInput.Text -SourceDeploymentPath $SourcePathInput.Text
+
+    $BtnDeploy.IsEnabled = $true
+    $ComputerInput.IsReadOnly = $false
+    $SourcePathInput.IsReadOnly = $false
+    $BtnBrowse.IsEnabled = $true
 })
 
 $BtnReRun.Add_Click({
-    $rerunScript = {
-        Invoke-ReRunDeployment
+    if (-not $script:LastDeployment) { return }
+    
+    Set-Status "Re-running..."
+    Add-OutputLine "[*] Re-running..."
+    
+    try {
+        Invoke-Command -ComputerName $script:LastDeployment.ComputerName -ScriptBlock {
+            param($Path)
+            $exe = Join-Path $Path "Invoke-AppDeployToolkit.exe"
+            Start-Process -FilePath $exe -ArgumentList '-DeploymentType Install -DeployMode Silent' -Wait
+        } -ArgumentList "C:\PSADT\$($script:LastDeployment.DeploymentName)"
+        
+        Add-OutputLine "[OK] Re-run complete"
+        Set-Status "Re-run complete"
     }
-    
-    $runspace = [System.Management.Automation.RunspaceFactory]::CreateRunspace()
-    $runspace.Open()
-    $runspace.SessionStateProxy.SetVariable('Config', $script:Config)
-    $runspace.SessionStateProxy.SetVariable('Update-OutputConsole', (Get-Item Function:\Update-OutputConsole))
-    $runspace.SessionStateProxy.SetVariable('Update-Status', (Get-Item Function:\Update-Status))
-    $runspace.SessionStateProxy.SetVariable('Invoke-ReRunDeployment', (Get-Item Function:\Invoke-ReRunDeployment))
-    
-    $ps = [System.Management.Automation.PowerShell]::Create()
-    $ps.Runspace = $runspace
-    [void]$ps.AddScript($rerunScript)
-    [void]$ps.BeginInvoke()
+    catch {
+        Add-OutputLine "[ERROR] Re-run failed"
+        Set-Status "Re-run failed"
+    }
 })
 
 $BtnOpenFolder.Add_Click({
+    if (-not $script:LastDeployment) { return }
     try {
-        Invoke-Item "\\$($script:Config.ComputerName)\C$\PSADT\$($script:Config.DeploymentName)"
+        Invoke-Item "\\$($script:LastDeployment.ComputerName)\C$\PSADT\$($script:LastDeployment.DeploymentName)"
     }
     catch {
         [System.Windows.MessageBox]::Show("Could not open folder", "Error", [System.Windows.MessageBoxButton]::OK, [System.Windows.MessageBoxImage]::Error)
@@ -747,15 +570,56 @@ $BtnOpenFolder.Add_Click({
 })
 
 $BtnDeleteFolder.Add_Click({
-    Invoke-DeleteRemoteFolder
+    if (-not $script:LastDeployment) { return }
+    
+    $result = [System.Windows.MessageBox]::Show("Delete deployment folder?", "Confirm", [System.Windows.MessageBoxButton]::YesNo, [System.Windows.MessageBoxImage]::Warning)
+    
+    if ($result -eq [System.Windows.MessageBoxResult]::Yes) {
+        try {
+            Invoke-Command -ComputerName $script:LastDeployment.ComputerName -ScriptBlock {
+                param($Path)
+                Remove-Item -Path $Path -Recurse -Force -ErrorAction SilentlyContinue
+            } -ArgumentList "C:\PSADT\$($script:LastDeployment.DeploymentName)"
+            
+            Add-OutputLine "[OK] Folder deleted"
+            Set-Status "Deleted"
+        }
+        catch {
+            Add-OutputLine "[ERROR] Delete failed"
+            Set-Status "Delete failed"
+        }
+    }
 })
 
 $BtnRefreshLogs.Add_Click({
-    Refresh-LogContent
+    if (-not $script:LastDeployment -or -not $script:LastDeployment.LogFile) {
+        [System.Windows.MessageBox]::Show("No log file available", "Info", [System.Windows.MessageBoxButton]::OK, [System.Windows.MessageBoxImage]::Information)
+        return
+    }
+    
+    try {
+        $content = Get-Content $script:LastDeployment.LogFile -ErrorAction SilentlyContinue | Out-String
+        $LogViewer.Text = $content
+        $LogViewer.ScrollToEnd()
+    }
+    catch {
+        [System.Windows.MessageBox]::Show("Could not read log file", "Error", [System.Windows.MessageBoxButton]::OK, [System.Windows.MessageBoxImage]::Error)
+    }
 })
 
 $BtnOpenLogFile.Add_Click({
-    Open-LogFile
+    if (-not $script:LastDeployment -or -not $script:LastDeployment.LogFile) {
+        [System.Windows.MessageBox]::Show("No log file available", "Info", [System.Windows.MessageBoxButton]::OK, [System.Windows.MessageBoxImage]::Information)
+        return
+    }
+    
+    try {
+        $logPath = Split-Path $script:LastDeployment.LogFile -Parent
+        explorer.exe $logPath
+    }
+    catch {
+        [System.Windows.MessageBox]::Show("Could not open folder", "Error", [System.Windows.MessageBoxButton]::OK, [System.Windows.MessageBoxImage]::Error)
+    }
 })
 
 $window.Add_Closed({
@@ -766,5 +630,5 @@ $window.Add_Closed({
 # ============================================================
 # Show Form
 # ============================================================
-Update-OutputConsole "=== Ready ==="
+Add-OutputLine "=== Ready ==="
 $app.Run($window)
